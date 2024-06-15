@@ -5,8 +5,11 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
-
+import WelcomePage from './(tabs)/WelcomePage';
+import { createStackNavigator } from '@react-navigation/stack';
 import { useColorScheme } from '@/components/useColorScheme';
+import TabOneScreen from './(tabs)/TabOneScreen';
+import TabTwoScreen from './(tabs)/TabTwoScreen';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -47,13 +50,15 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
+  const Stack = createStackNavigator();
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
+      <Stack.Navigator>
+        <Stack.Screen name="(tabs)/TabOneScreen" component={TabOneScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)/WelcomePage" component={WelcomePage} options={{ title: 'My Time Off Requests' }}/>
+        <Stack.Screen name="(tabs)/TabTwoScreen" component={TabTwoScreen} options={{ title: 'New Time Off Request' }}/>
+      </Stack.Navigator>
     </ThemeProvider>
   );
 }

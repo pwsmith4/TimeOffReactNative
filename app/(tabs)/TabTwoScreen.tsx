@@ -1,13 +1,18 @@
 import { StatusBar } from 'expo-status-bar';
-import { Platform, StyleSheet, View, Dimensions, TextInput, ScrollView, Button} from 'react-native';
+import { Platform, StyleSheet, View, Dimensions, TextInput, ScrollView, Button, Keyboard, TouchableWithoutFeedback} from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 
 import EditScreenInfo from '@/components/EditScreenInfo';
 import { Text } from '@/components/Themed';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import React, { useState } from 'react';
+import RNPickerSelect from 'react-native-picker-select';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 export default function TabTwoScreen() {
+  let today = new Date();
+let dateString = today.toISOString().split('T')[0];
+  const [isPickerClicked, setIsPickerClicked] = useState(false);
   const [selectedDates, setSelectedDates] = useState<{start: string | null, end: string | null, selectedDates: Record<string, any>}>({start: null, end: null, selectedDates: {}});
   const [selectedValue, setSelectedValue] = useState("");
   const [comment, setComment] = useState('');
@@ -53,55 +58,96 @@ export default function TabTwoScreen() {
   let endDate = selectedDates.end ? new Date(selectedDates.end) : new Date();
   endDate.setDate(endDate.getDate() + 1);
   return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
     <ScrollView>
     <View>
-      <Calendar
-        onDayPress={onDayPress}
-        markedDates={selectedDates.selectedDates}
-        style={{
-          width: width, // Set the width to the full width of the device
-          top: 0, // Push it to the top of the screen
-        }}
-      />
+    <Calendar
+          onDayPress={onDayPress}
+          markedDates={selectedDates.selectedDates}
+          minDate={dateString} // Disable past dates
+          style={{
+            width: width, // Set the width to the full width of the device
+          }}
+        />
 <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 10, width:width }}>
   <View style={{ alignItems: 'flex-start' }}>
     <Text style={{fontSize: 20 }}>Start Date</Text>
-    <Text style={{fontSize: 20 }}>{startDate.toLocaleDateString('en-US')}</Text>
-      </View>
+    <Text style={{fontSize: 20 }}>
+      {selectedDates.start ? startDate.toLocaleDateString('en-US') : 'Not Selected'}
+    </Text>
+  </View>
   <View style={{ alignItems: 'flex-end' }}>
     <Text style={{fontSize: 20 }}>End Date</Text>
-    <Text style={{fontSize: 20 }}>{endDate.toLocaleDateString('en-US')}</Text>
-  </View>
+    <Text style={{fontSize: 20 }}>
+      {selectedDates.end ? endDate.toLocaleDateString('en-US') : 'Not Selected'}
+    </Text>
+  </View> 
 </View>
-<View>
-<Text style={{ textAlign: 'center', fontSize: 25 }}>Select a Time Off Request Type</Text>
-  <Picker
-    selectedValue={selectedValue}
-    onValueChange={(itemValue, itemIndex) => setSelectedValue(itemValue)}
-    itemStyle={{ color: 'white' }}
-    style={{margin: 0}}
-  >
-    <Picker.Item label="Family Leave" value="familyLeave" />
-    <Picker.Item label="Medical Leave" value="medicalLeave" />
-    <Picker.Item label="Vacation Time" value="vacationTime" />
-    <Picker.Item label="Other" value="other" />
-  </Picker>
+<View style={{flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+<RNPickerSelect
+  onValueChange={(value) => {
+    setIsPickerClicked(true);
+    setSelectedValue(value);
+  }}
+  items={
+    selectedValue && selectedValue !== 'placeholder'
+      ? [
+          { label: 'Family Leave', value: 'familyLeave' },
+          { label: 'Medical Leave', value: 'medicalLeave' },
+          { label: 'Vacation Time', value: 'vacationTime' },
+          { label: 'Other', value: 'other' },
+        ]
+      : [
+          { label: 'Select Time Off Type', value: 'placeholder' },
+          { label: 'Family Leave', value: 'familyLeave' },
+          { label: 'Medical Leave', value: 'medicalLeave' },
+          { label: 'Vacation Time', value: 'vacationTime' },
+          { label: 'Other', value: 'other' },
+        ]
+  }
+  style={{
+    inputIOS: { color: 'white', fontSize: 25, borderWidth: .5, borderColor: 'gray', textAlign: 'center', borderRadius: 6, padding: 5, marginTop: '4%', marginBottom: '4%'},
+    inputAndroid: { color: 'white', fontSize: 25, borderWidth: .5, borderColor: 'gray', textAlign: 'center', borderRadius: 6, padding: 5, marginTop: '4%', marginBottom: '4%'},
+  }}
+  placeholder={{}}
+  useNativeAndroidPickerStyle={false}
+
+/>
   </View>
   <View>
-  <Text style={{ textAlign: 'center', fontSize: 25 }}>Comments</Text>
   <TextInput
-    style={{ height: 100, borderColor: 'gray', borderWidth: 1, width: '90%', alignSelf: 'center', marginTop:'2%', color: 'white'}}
+    style={{ height: 100, borderColor: 'gray', borderWidth: 1, width: '90%', alignSelf: 'center', color: 'white'}}
     onChangeText={text => setComment(text)}
+    multiline = {true}
+    numberOfLines = {4}
     value={comment}
-    placeholder="Type your comments here..."
+    placeholder=" Comments"
   />
 <View style={{ margin: 30 }}>
-  <Button
-    title="Submit Time Off Request"
-    onPress={() => {
-      // Handle your submit logic here
-    }}
-  />
+<Button
+  title="Submit Time Off Request"
+  onPress={() => {
+    fetch('http://your-server.com/api/endpoint', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        startDate: selectedDates.start,
+        endDate: selectedDates.end,
+        type: selectedValue,
+        comment: comment,
+      }),
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('Success:', data);
+    })
+    .catch((error) => {
+      console.error('Error:', error);
+    });
+  }}
+/>
 </View>
 </View>
 
@@ -111,6 +157,7 @@ export default function TabTwoScreen() {
       <StatusBar style={Platform.OS === 'ios' ? 'light' : 'auto'} />
     </View>
     </ScrollView>
+    </TouchableWithoutFeedback>
   );
 }
 
