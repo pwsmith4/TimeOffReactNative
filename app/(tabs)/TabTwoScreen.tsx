@@ -1,7 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { Platform, StyleSheet, View, Dimensions, TextInput, ScrollView, Button, Keyboard, TouchableWithoutFeedback} from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-
+import axios from 'axios';
 import EditScreenInfo from '@/components/EditScreenInfo';
 import { Text } from '@/components/Themed';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
@@ -127,21 +127,14 @@ let dateString = today.toISOString().split('T')[0];
 <Button
   title="Submit Time Off Request"
   onPress={() => {
-    fetch('http://your-server.com/api/endpoint', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    axios.post('https://830d-2600-1700-92a0-ae0-3895-fe75-7c13-f424.ngrok-free.app/api/timeoff', {
         startDate: selectedDates.start,
-        endDate: selectedDates.end,
+        endDate: selectedDates.end, 
         type: selectedValue,
         comment: comment,
-      }),
     })
-    .then(response => response.json())
-    .then(data => {
-      console.log('Success:', data);
+    .then(response => {
+      console.log('Success:', response.data);
     })
     .catch((error) => {
       console.error('Error:', error);
