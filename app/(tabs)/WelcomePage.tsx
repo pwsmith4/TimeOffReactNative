@@ -10,22 +10,17 @@ import TabTwoScreen from './TabTwoScreen';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import {getUser} from '../../authUtils';
 import axios from 'axios';
+import {BASE_URL} from '../../config';
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
-interface TimeOffRequest {
-  _id: string;
-  startDate: string;
-  endDate: string;
-  type: string;
-  comment: string;
-  status: string;
-}
+const TimeOffRequest = require('../models/TimeOffRequest');
 const { width: screenWidth } = Dimensions.get('window');
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
-  return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear().toString().substr(-2)}`;
+  const utcDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
+  return `${utcDate.getMonth() + 1}/${utcDate.getDate()}/${utcDate.getFullYear().toString().substr(-2)}`;
 };
 
 
@@ -41,7 +36,7 @@ const WelcomePage = () => {
     try {
       const user = await getUser();
       if (user) {
-      const response = await axios.post('https://290d-2600-1700-92a0-ae0-31d8-a6ec-2fd2-85e7.ngrok-free.app/api/timeoff/users', {
+      const response = await axios.post(`${BASE_URL}/api/timeoff/users`, {
         username: user.username
       });        
       setTimeOffRequests(response.data.timeOffRequests);
@@ -97,13 +92,21 @@ const WelcomePage = () => {
   
   const handleDelete = async (item: TimeOffRequest) => {
     try {
-      await axios.delete(`https://290d-2600-1700-92a0-ae0-31d8-a6ec-2fd2-85e7.ngrok-free.app/api/timeoff/${item._id}`);
-      setTimeOffRequests(prevRequests => prevRequests.filter(request => request._id !== item._id));
-    } catch (error) {
+      console.log('Attempting to delete time-off request:', item);
+      const response = await axios.delete(`${BASE_URL}/api/timeoff`, { data: { id: item._id } });
+      console.log('Delete response:', response);
+      if (response.status === 200) {
+        setTimeOffRequests(prevRequests => prevRequests.filter(request => request._id !== item._id));
+      }
+    } catch (error: any) {
       console.error('Error deleting time-off request:', error);
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+      }
       Alert.alert('Error', 'Failed to delete the time-off request.');
     }
   };
+  
 
   const confirmDelete = (item: TimeOffRequest) => {
     Alert.alert(
@@ -127,17 +130,21 @@ const WelcomePage = () => {
   const renderItem = ({ item }: { item: TimeOffRequest }) => (
     <TouchableOpacity onPress={() => confirmDelete(item)}>
       <View style={styles.requestBox}>
-      <Text style={styles.statusText}>Status: {item.status}</Text>
-      <View style={styles.dateContainer}>
-        <Text style={styles.dateText}>{formatDate(item.startDate)}</Text>
-        <Text style={styles.dateText}>{formatDate(item.endDate)}</Text>
-      </View>
-      <Text style={styles.typeText}>Type: {formatType(item.type)}</Text>
-      <Text style={styles.commentText}>Comment: {item.comment}</Text>
+        <View style={styles.statusContainer}>
+        <Text style={styles.statusText}>Status: </Text>
+        <Text style={styles.statusValue}>{item.status}</Text>
+        </View>
+        <View style={styles.dateContainer}>
+          <Text style={styles.dateText}>{formatDate(item.startDate)}</Text>
+          <Text style={styles.dateText}>
+            {item.endDate ? formatDate(item.endDate) : formatDate(item.startDate)}
+          </Text>
+        </View>
+        <Text style={styles.typeText}>Type: {formatType(item.type)}</Text>
+        <Text style={styles.commentText}>Comment: {item.comment}</Text>
       </View>
     </TouchableOpacity>
   );
-
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
@@ -182,7 +189,18 @@ const WelcomePage = () => {
       fontSize: 18,
       fontWeight: 'bold',
       textAlign: 'center',
+    },
+    statusContainer: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
       marginBottom: 5,
+    },
+    statusValue: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      textAlign: 'center',
+      color: 'grey',
     },
     dateContainer: {
       flexDirection: 'row',
