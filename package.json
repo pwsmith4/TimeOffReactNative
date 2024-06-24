@@ -3,7 +3,8 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
-    "start": "expo start",
+    "start": "node server/server.js",
+    "build": "npx expo export",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
@@ -14,10 +15,12 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.0",
+    "@react-native-async-storage/async-storage": "^1.23.1",
     "@react-native-picker/picker": "^2.7.7",
     "@react-navigation/native": "^6.0.2",
     "@react-navigation/stack": "^6.3.29",
     "axios": "^1.7.2",
+    "bcrypt": "^5.1.1",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "dateutils": "^0.5.1",
