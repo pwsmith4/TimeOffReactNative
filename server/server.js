@@ -44,7 +44,6 @@ const UserSchema = new mongoose.Schema({
 const User = mongoose.model('User', UserSchema);
 
 // Model
-const TimeOffRequest = mongoose.model('TimeOffRequest', RequestSchema);
 
 // Middleware
 app.use(bodyParser.json());
@@ -54,17 +53,30 @@ app.get('/api/test', (req, res) => {
 });
 
 // Routes
-app.delete('/timeoff/:id', async (req, res) => {
+// Delete Time-Off Request
+app.delete('/api/timeoff', async (req, res) => {
   try {
-    const { id } = req.params;
-    const result = await TimeOffRequest.findByIdAndDelete(id);
-    if (result) {
-      res.status(200).json({ message: 'Time-off request deleted successfully' });
-    } else {
-      res.status(404).json({ message: 'Time-off request not found' });
+    const { id } = req.body;
+    if (!id) {
+      return res.status(400).json({ message: 'ID parameter is required' });
     }
+
+    console.log('Attempting to delete time-off request with ID:', id);
+
+    const user = await User.findOne({ 'timeOffRequests._id': id });
+    if (!user) {
+      console.log('User not found for time-off request ID:', id);
+      return res.status(404).json({ message: 'Time-off request not found' });
+    }
+
+    user.timeOffRequests.pull({ _id: id });
+    await user.save();
+
+    console.log('Time-off request deleted successfully:', id);
+    res.status(200).json({ message: 'Time-off request deleted successfully' });
   } catch (error) {
-    res.status(500).json({ message: 'Error deleting time-off request', error });
+    console.error('Error deleting time-off request:', error);
+    res.status(500).json({ message: 'Failed to delete the time-off request', error: error.message });
   }
 });
 

@@ -9,6 +9,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types';
 import {storeUser} from '../../authUtils';
 import axios, { AxiosError } from 'axios'; 
+import {BASE_URL} from '../../config';
 
 const TabOneScreen = ()  => {
   type NavigationProp = StackNavigationProp<RootStackParamList>;
@@ -23,7 +24,7 @@ const TabOneScreen = ()  => {
   const handleSubmit = async () => {
     try {
       const endpoint = isSignUp ? '/api/signup' : '/api/signin';
-      const response = await axios.post(`https://290d-2600-1700-92a0-ae0-31d8-a6ec-2fd2-85e7.ngrok-free.app${endpoint}`, {
+      const response = await axios.post(`${BASE_URL}${endpoint}`, {
         username,
         password,
       });
