@@ -1,13 +1,14 @@
 import { StatusBar } from 'expo-status-bar';
 import { Platform, StyleSheet, View, Dimensions, TextInput, ScrollView, Button, Keyboard, TouchableWithoutFeedback} from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-
+import axios from 'axios';
 import EditScreenInfo from '@/components/EditScreenInfo';
 import { Text } from '@/components/Themed';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import RNPickerSelect from 'react-native-picker-select';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import { getUser } from '../../authUtils';
 
 export default function TabTwoScreen() {
   let today = new Date();
@@ -16,6 +17,8 @@ let dateString = today.toISOString().split('T')[0];
   const [selectedDates, setSelectedDates] = useState<{start: string | null, end: string | null, selectedDates: Record<string, any>}>({start: null, end: null, selectedDates: {}});
   const [selectedValue, setSelectedValue] = useState("");
   const [comment, setComment] = useState('');
+  const [currentUser, setCurrentUser] = useState<{ username: string } | null>(null);
+
   interface SelectedDates {
     start: string | null;
     end: string | null;
@@ -31,6 +34,14 @@ let dateString = today.toISOString().split('T')[0];
     year: number;
     timestamp: number;
   }
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const user = await getUser();
+      setCurrentUser(user);
+    };
+    fetchUser();
+  }, []);
 
   const onDayPress = (day : Day) => {
     if (newSelectedDates.start == null || (newSelectedDates.start && newSelectedDates.end)) {
@@ -57,6 +68,7 @@ let dateString = today.toISOString().split('T')[0];
   startDate.setDate(startDate.getDate() + 1);
   let endDate = selectedDates.end ? new Date(selectedDates.end) : new Date();
   endDate.setDate(endDate.getDate() + 1);
+
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
     <ScrollView>
@@ -127,24 +139,36 @@ let dateString = today.toISOString().split('T')[0];
 <Button
   title="Submit Time Off Request"
   onPress={() => {
-    fetch('http://your-server.com/api/endpoint', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+
+    if (!currentUser) {
+      console.error('No user logged in');
+      return;
+    }
+
+    axios.post('https://290d-2600-1700-92a0-ae0-31d8-a6ec-2fd2-85e7.ngrok-free.app/api/timeoff', {
         startDate: selectedDates.start,
-        endDate: selectedDates.end,
+        endDate: selectedDates.end, 
         type: selectedValue,
         comment: comment,
-      }),
+        username: currentUser.username,
+        status: "Pending"
     })
-    .then(response => response.json())
-    .then(data => {
-      console.log('Success:', data);
+    .then(response => {
+      console.log('Success:', response.data);
     })
     .catch((error) => {
-      console.error('Error:', error);
+      if (error.response) {
+        console.error('Error data:', error.response.data);
+        console.error('Error status:', error.response.status);
+        console.error('Error headers:', error.response.headers);
+      } else if (error.request) {
+        // The request was made but no response was received
+        console.error('Error request:', error.request);
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        console.error('Error message:', error.message);
+      }
+      console.error('Error config:', error.config);
     });
   }}
 />
